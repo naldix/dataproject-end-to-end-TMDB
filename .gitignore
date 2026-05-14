@@ -1,0 +1,29 @@
+# Credenciais
+.env
+
+# Dados locais
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+
+# Ambientes virtuais
+venv/
+.venv/
+
+# VSCode
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Delta Lake (gerado automaticamente)
+data/bronze/
+
+# Docker
+postgres_data
