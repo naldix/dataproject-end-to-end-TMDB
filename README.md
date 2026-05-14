@@ -1,4 +1,5 @@
 # Data Pipeline End-to-End - TMDB API
+Bem-vindo ao pipeline TMDB API com arquitetura medalhão
 
 ## Sobre o projeto
 A ideia do projeto foi construir um pipeline de dados mais próximo do mercado de trabalho, passando por ingestão, tratamento e modelagem. Tudo isso conteinerizado dentro do Docker e orquetrado pelo Apache AirFlow.
