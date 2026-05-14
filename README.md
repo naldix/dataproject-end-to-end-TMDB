@@ -30,6 +30,7 @@ git clone https://github.com/naldix/dataproject-end-to-end-TMDB.git
 ```
 
 2. Configure as variáveis de ambiente:
+
 O projeto possui o arquivo .env.example com as variáveis necessárias. Obtenha a chave de API do TMDB e cole ao arquivo.
 
 3. Rode o arquivo docker-compose:
