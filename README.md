@@ -13,3 +13,33 @@ O próximo passo é a conexão da camada Gold (tabelas com regras de negócio e 
 
 ## Arquitetura
 ![Arquitetura](assets/Project_TMDB.drawio.png)
+
+## Tech Stack
+- Docker: Utilizado para containerizar toda a aplicação, incluindo o Airflow e o PostgreSQL, garantindo um ambiente isolado, reprodutível e fácil de executar em qualquer máquina.
+- Apache Airflow: Responsável pela orquestração do pipeline, agendando e monitorando a execução automatizada de cada etapa do fluxo ETL de forma sequencial e confiável.
+- PostgreSQL: Banco de dados relacional utilizado para persistir os dados, armazenando desde os dados da silver até os dados prontos para análise.
+- Python: Linguagem principal utilizada para desenvolver todos os módulos do pipeline, incluindo a extração dos dados da API do TMDB, as transformações e a carga no banco de dados.
+- SQL: Utilizado para criação das tabelas, queries de transformação e manipulação dos dados dentro do PostgreSQL ao longo das camadas Silver e Gold.
+- Power BI: Ferramenta de visualização utilizada na etapa final do projeto, conectando-se à camada Gold do PostgreSQL para a criação de dashboards e análises orientadas ao negócio.
+- GitHub: Utilizado para versionamento do código, controle de alterações e hospedagem do repositório do projeto.
+
+# Utilização do Projeto
+1. Clone o repositório:
+```bash
+git clone https://github.com/naldix/dataproject-end-to-end-TMDB.git
+```
+
+2. Configure as variáveis de ambiente:
+O projeto possui o arquivo .env.example com as variáveis necessárias. Obtenha a chave de API do TMDB e cole ao arquivo.
+
+3. Rode o arquivo docker-compose:
+```bash
+docker-compose up -d
+```
+Isso vai inicializar o Airflow, PostgreSQL e os contêiners dentro do Docker.
+
+4. Acesse a aplicação pelo AirFlow:
+Abra o navegador e navegue para http://localhost:8080
+
+## Contribuição
+Fique a vontade para contribuir ao projeto e/ou entrar em contato para dicas de melhoria e/ou críticas.
