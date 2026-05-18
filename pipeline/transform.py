@@ -39,7 +39,8 @@ def transformar_movies(df_detalhes: pd.DataFrame) -> pd.DataFrame:
     }
 
     colunas_existentes = {k: v for k, v in colunas.items() if k in df_detalhes.columns}
-    df = df_detalhes[list(colunas_existentes.keys())].rename(columns=colunas_existentes)
+    df = df_detalhes[list(colunas_existentes.keys())].copy()
+    df.rename(columns=colunas_existentes, inplace=True)
 
     # Coleção
     if "belongs_to_collection.id" in df_detalhes.columns:
@@ -50,6 +51,7 @@ def transformar_movies(df_detalhes: pd.DataFrame) -> pd.DataFrame:
         df["collection_name"] = None
 
     #Tipagem
+    df = df.dropna(subset=["id"])
     df["id"] = df["id"].astype(int)
     df["vote_count"] = pd.to_numeric(df["vote_count"], errors="coerce").fillna(0).astype(int)
     df["budget"] = pd.to_numeric(df["budget"], errors="coerce").fillna(0).astype(int)
@@ -89,9 +91,11 @@ def transformar_tv_shows(df_detalhes: pd.DataFrame) -> pd.DataFrame:
     }
 
     colunas_existentes = {k: v for k, v in colunas.items() if k in df_detalhes.columns}
-    df = df_detalhes[list(colunas_existentes.keys())].rename(columns=colunas_existentes)
+    df = df_detalhes[list(colunas_existentes.keys())].copy()
+    df.rename(columns=colunas_existentes, inplace=True)
 
     #Tipagem
+    df = df.dropna(subset=["id"])
     df["id"] = df["id"].astype(int)
     df["vote_count"] = pd.to_numeric(df["vote_count"], errors="coerce").fillna(0).astype(int)
     df["number_of_seasons"] = pd.to_numeric(df["number_of_seasons"], errors="coerce").fillna(0).astype(int)
@@ -123,7 +127,7 @@ def transformar_generos(df_detalhes: pd.DataFrame, id_col: str, tabela_col: str)
             try:
                 import ast
                 generos = ast.literal_eval(generos)
-            except:
+            except Exception:
                 continue
 
         if isinstance(generos, list):
@@ -237,8 +241,6 @@ def executar_silver():
 
         df_movie_genres = transformar_generos(df_movie_details, "id", "movie_id")
         salvar_silver(df_movie_genres, "silver_movie_genres")
-
-        df_networks_series = transformar_networks(df_movie_details)
 
     df_movie_cast = carregar_bronze("filmes_elenco")
     if not df_movie_cast.empty:

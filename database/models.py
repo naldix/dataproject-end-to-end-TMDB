@@ -151,6 +151,16 @@ def criar_tabelas():
             );
         """))
 
+        #Gold_ponte
+        conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS bridge_genre (
+            content_id INTEGER,
+            genre_id INTEGER,
+            type TEXT,  -- 'movie' ou 'tv'
+            PRIMARY KEY (content_id, genre_id, type)
+        );
+        """))
+
         #Gold Fato_filmes
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS gold_fact_movies (
@@ -159,6 +169,7 @@ def criar_tabelas():
                 release_year INTEGER,
                 release_month INTEGER,
                 decade INTEGER,
+                date_id INTEGER,
                 popularity FLOAT,
                 vote_average FLOAT,
                 vote_count INTEGER,
@@ -180,6 +191,7 @@ def criar_tabelas():
                 first_air_year INTEGER,
                 first_air_month INTEGER,
                 decade INTEGER,
+                date_id INTEGER,
                 popularity FLOAT,
                 vote_average FLOAT,
                 vote_count INTEGER,
@@ -224,7 +236,7 @@ def criar_tabelas():
 
         #Gold Dim_tempo
         conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS gold_dim_time (
+            CREATE TABLE IF NOT EXISTS gold_fact_time (
                 year INTEGER ,
                 month INTEGER,
                 decade INTEGER,
@@ -237,5 +249,29 @@ def criar_tabelas():
                 PRIMARY KEY(year, month)
             );
         """))
+
+        #Gold date
+        conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS gold_dim_date (
+            date_id INTEGER PRIMARY KEY,
+            year INTEGER,
+            month INTEGER,
+            quarter INTEGER,
+            decade INTEGER
+        );
+        """))         
+
+        #Gold Network
+        conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS gold_dim_network (
+            network_id INTEGER PRIMARY KEY,
+            network_name TEXT,
+            origin_country TEXT,
+            total_tv_shows INTEGER,
+            avg_vote FLOAT,
+            avg_popularity FLOAT,
+            generated_at TIMESTAMP DEFAULT NOW()
+        );
+        """))           
 
     print("[DB] Tabelas criadas/verificadas com sucesso!")

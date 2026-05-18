@@ -44,7 +44,7 @@ with DAG(
     description = "Pipeline ETL TMDB com camadas Bronze, Silver e Gold",
     default_args = default_args,
     start_date = datetime(2026, 5, 12),
-    schedule_interval = '0 12 * * *',
+    schedule = '0 12 * * *',
     catchup = False,
     tags = ["tmdb", "etl", "data-engineering"]
 ) as dag:
@@ -56,7 +56,8 @@ with DAG(
 
     extract_bronze = PythonOperator(
         task_id = "extract_bronze",
-        python_callable = executar_bronze
+        python_callable = executar_bronze,
+        execution_timeout=timedelta(minutes=60)
     )
 
     log_fim_extract = PythonOperator(
@@ -71,7 +72,8 @@ with DAG(
 
     transform_silver = PythonOperator(
         task_id = "transform_silver",
-        python_callable = executar_silver
+        python_callable = executar_silver,
+        execution_timeout=timedelta(minutes=60)
     )
 
     log_fim_transform = PythonOperator(
@@ -86,7 +88,8 @@ with DAG(
 
     load_gold = PythonOperator(
         task_id = "load_gold",
-        python_callable = executar_gold
+        python_callable = executar_gold,
+        execution_timeout=timedelta(minutes=60)
     )
 
     log_fim_load = PythonOperator(
