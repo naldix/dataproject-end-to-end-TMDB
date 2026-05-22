@@ -151,24 +151,16 @@ def criar_tabelas():
             );
         """))
 
-        #Gold_ponte
-        conn.execute(text("""
-        CREATE TABLE IF NOT EXISTS bridge_genre (
-            content_id INTEGER,
-            genre_id INTEGER,
-            type TEXT,  -- 'movie' ou 'tv'
-            PRIMARY KEY (content_id, genre_id, type)
-        );
-        """))
-
         #Gold Fato_filmes
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS gold_fact_movies (
-                movie_id INTEGER PRIMARY KEY,
+                movie_id INTEGER,
+                genre_id INTEGER,
                 title TEXT,
                 release_year INTEGER,
                 release_month INTEGER,
                 decade INTEGER,
+                full_date DATE,
                 date_id INTEGER,
                 popularity FLOAT,
                 vote_average FLOAT,
@@ -179,18 +171,23 @@ def criar_tabelas():
                 roi FLOAT,
                 runtime INTEGER,
                 query TEXT,
-                generated_at TIMESTAMP DEFAULT NOW()
+                generated_at TIMESTAMP DEFAULT NOW(),
+                          
+                PRIMARY KEY (movie_id, genre_id)
             );
         """))
 
         #Gold Fato_séries
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS gold_fact_tv_shows (
-                tv_show_id INTEGER PRIMARY KEY,
+                tv_show_id INTEGER,
+                genre_id INTEGER,
                 name TEXT,
+                network_id INTEGER,
                 first_air_year INTEGER,
                 first_air_month INTEGER,
                 decade INTEGER,
+                full_date DATE,
                 date_id INTEGER,
                 popularity FLOAT,
                 vote_average FLOAT,
@@ -199,22 +196,35 @@ def criar_tabelas():
                 number_of_episodes INTEGER,
                 in_production BOOLEAN,
                 query TEXT,
-                generated_at TIMESTAMP DEFAULT NOW()
+                generated_at TIMESTAMP DEFAULT NOW(),
+                          
+                PRIMARY KEY (tv_show_id, genre_id, network_id)
             );
         """))
 
-        #Gold Dim_gênero
+        #Gold Dim_gênero_movie
         conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS gold_dim_genre (
-                genre_id INTEGER,
+            CREATE TABLE IF NOT EXISTS gold_dim_movie_genre (
+                genre_id INTEGER PRIMARY KEY,
                 genre_name TEXT,
-                type TEXT,
-                total_titles INTEGER,
+                total_movies INTEGER,
                 avg_vote FLOAT,
                 avg_popularity FLOAT,
-                generated_at TIMESTAMP DEFAULT NOW(),
-                          
-                PRIMARY KEY(genre_id, type)
+                generated_at TIMESTAMP DEFAULT NOW()
+
+            );
+        """))
+
+        #Gold Dim_gênero_tv_show
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS gold_dim_tv_genre (
+                genre_id INTEGER PRIMARY KEY,
+                genre_name TEXT,
+                total_tv_shows INTEGER,
+                avg_vote FLOAT,
+                avg_popularity FLOAT,
+                generated_at TIMESTAMP DEFAULT NOW()
+
             );
         """))
 
@@ -227,6 +237,7 @@ def criar_tabelas():
                 total_movies INTEGER,
                 total_tv_shows INTEGER,
                 avg_vote FLOAT,
+                person_popularity FLOAT,
                 avg_popularity FLOAT,
                 generated_at TIMESTAMP DEFAULT NOW(),
                           
@@ -257,7 +268,8 @@ def criar_tabelas():
             year INTEGER,
             month INTEGER,
             quarter INTEGER,
-            decade INTEGER
+            decade INTEGER,
+            full_date DATE
         );
         """))         
 

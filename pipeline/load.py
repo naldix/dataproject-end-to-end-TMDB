@@ -46,56 +46,61 @@ def transformar_dim_date(df_movies: pd.DataFrame, df_tv: pd.DataFrame) -> pd.Dat
     df["quarter"] = df["data"].dt.quarter.astype(int)
     df["decade"] = (df["year"] // 10 * 10).astype(int)
     df["date_id"] = df["year"] * 100 + df["month"]
+    df["full_date"] = df["data"].dt.date
  
-    return df[["date_id", "year", "month", "quarter", "decade"]].drop_duplicates(subset="date_id")
+    return df[["date_id", "year", "month", "quarter", "decade", "full_date"]].drop_duplicates(subset="date_id")
 
-def transformar_dim_genre(df_movie_genres: pd.DataFrame, df_tv_genres: pd.DataFrame, df_movies: pd.DataFrame, df_tv: pd.DataFrame) -> pd.DataFrame:
+def transformar_dim_movie_genre(df_movie_genres: pd.DataFrame, df_movies: pd.DataFrame) -> pd.DataFrame:
+
+    if df_movie_genres.empty or df_movies.empty:
+        return pd.DataFrame()
+
+    merged = df_movie_genres.merge(
+        df_movies[["id", "vote_average", "popularity"]],
+        left_on="movie_id",
+        right_on="id",
+        how="left"
+    )
+
     registros = []
 
-    #Gêneros de filmes
-    if not df_movie_genres.empty and not df_movies.empty:
-        merged = df_movie_genres.merge(df_movies[["id", "vote_average", "popularity"]], left_on="movie_id", right_on="id", how="left")
-        for (gid, gname), grupo in merged.groupby(["genre_id", "genre_name"]):
-            registros.append({
-                "genre_id": gid,
-                "genre_name": gname,
-                "type": "movie",
-                "total_titles": grupo["movie_id"].nunique(),
-                "avg_vote": round(grupo["vote_average"].mean(), 2),
-                "avg_popularity": round(grupo["popularity"].mean(), 2),
-                "generated_at": datetime.now()
-            })
-
-    #Gêneros de séries
-    if not df_tv_genres.empty and not df_tv.empty:
-        merged = df_tv_genres.merge(df_tv[["id", "vote_average", "popularity"]], left_on="tv_show_id", right_on="id", how="left")
-        for (gid, gname), grupo in merged.groupby(["genre_id", "genre_name"]):
-            registros.append({
-                "genre_id": gid,
-                "genre_name": gname,
-                "type": "tv",
-                "total_titles": grupo["tv_show_id"].nunique(),
-                "avg_vote": round(grupo["vote_average"].mean(), 2),
-                "avg_popularity": round(grupo["popularity"].mean(), 2),
-                "generated_at": datetime.now()
-            })
+    for (gid, gname), grupo in merged.groupby(["genre_id", "genre_name"]):
+        registros.append({
+            "genre_id": gid,
+            "genre_name": gname,
+            "total_movies": grupo["movie_id"].nunique(),
+            "avg_vote": round(grupo["vote_average"].mean(), 2),
+            "avg_popularity": round(grupo["popularity"].mean(), 2),
+            "generated_at": datetime.now()
+        })
 
     return pd.DataFrame(registros)
 
-def transformar_bridge_genre(df_movie_genres: pd.DataFrame, df_tv_genres: pd.DataFrame) -> pd.DataFrame:
-    df_m = df_movie_genres[["movie_id", "genre_id"]].copy()
-    df_m = df_m.rename(columns={"movie_id": "content_id"})
-    df_m["type"] = "movie"
- 
-    df_t = df_tv_genres[["tv_show_id", "genre_id"]].copy()
-    df_t = df_t.rename(columns={"tv_show_id": "content_id"})
-    df_t["type"] = "tv"
- 
-    df = pd.concat([df_m, df_t], ignore_index=True)
-    df.drop_duplicates(subset=["content_id", "genre_id", "type"], inplace=True)
-    df.dropna(subset=["content_id", "genre_id"], inplace=True)
- 
-    return df
+def transformar_dim_tv_genre(df_tv_genres: pd.DataFrame, df_tv: pd.DataFrame) -> pd.DataFrame:
+
+    if df_tv_genres.empty or df_tv.empty:
+        return pd.DataFrame()
+
+    merged = df_tv_genres.merge(
+        df_tv[["id", "vote_average", "popularity"]],
+        left_on="tv_show_id",
+        right_on="id",
+        how="left"
+    )
+
+    registros = []
+
+    for (gid, gname), grupo in merged.groupby(["genre_id", "genre_name"]):
+        registros.append({
+            "genre_id": gid,
+            "genre_name": gname,
+            "total_tv_shows": grupo["tv_show_id"].nunique(),
+            "avg_vote": round(grupo["vote_average"].mean(), 2),
+            "avg_popularity": round(grupo["popularity"].mean(), 2),
+            "generated_at": datetime.now()
+        })
+
+    return pd.DataFrame(registros)
 
 def transformar_dim_person(df_movie_cast: pd.DataFrame, df_movie_crew: pd.DataFrame,
     df_tv_cast: pd.DataFrame, df_tv_crew: pd.DataFrame,
@@ -106,14 +111,21 @@ def transformar_dim_person(df_movie_cast: pd.DataFrame, df_movie_crew: pd.DataFr
         if df.empty or df_ref.empty:
             return
         merged = df.merge(
-        df_ref[["id", "vote_average", "popularity"]].rename(columns={"popularity":"content_popularity","vote_average":  "content_vote_average"
-        }),
+        df_ref[["id", "vote_average", "popularity"]].rename(columns={"popularity":"content_popularity","vote_average":  "content_vote_average"}),
         left_on=id_col,
         right_on="id",
         how="left"
     )
+        
         for person_id, grupo in merged.groupby("person_id"):
             chave = (person_id, role)
+
+            person_popularity = (
+                round(grupo["content_popularity"].mean(), 2)
+                if "content_popularity" in grupo.columns
+                else 0
+            )
+
             if chave not in registros:
                 registros[chave] = {
                     "person_id": person_id,
@@ -123,7 +135,8 @@ def transformar_dim_person(df_movie_cast: pd.DataFrame, df_movie_crew: pd.DataFr
                     "total_tv_shows": 0,
                     "avg_vote": 0,
                     "avg_popularity": 0,
-                    "generated_at": datetime.now()
+                    "generated_at": datetime.now(),
+                    "person_popularity": person_popularity
                 }
             registros[chave][f"total_{tipo}s"] += grupo[id_col].nunique()
             registros[chave]["avg_vote"] = round(grupo["content_vote_average"].mean(), 2)
@@ -177,12 +190,7 @@ def transformar_dim_network(df_networks: pd.DataFrame, df_tv: pd.DataFrame) -> p
     if df_networks.empty or df_tv.empty:
         return pd.DataFrame()
 
-    merged = df_networks.merge(
-        df_tv[["id", "vote_average", "popularity"]],
-        left_on="tv_show_id",
-        right_on="id",
-        how="left"
-    )
+    merged = df_networks.merge(df_tv[["id", "vote_average", "popularity"]], left_on="tv_show_id", right_on="id", how="left")
 
     registros = []
 
@@ -199,10 +207,10 @@ def transformar_dim_network(df_networks: pd.DataFrame, df_tv: pd.DataFrame) -> p
 
     return pd.DataFrame(registros)
 
-def transformar_fact_movies(df: pd.DataFrame) -> pd.DataFrame:
+def transformar_fact_movies(df: pd.DataFrame, df_movie_genres: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
-
+    
     resultado = df.copy()
     resultado = resultado.rename(columns={"id": "movie_id"})
     resultado["release_year"]  = pd.to_datetime(resultado["release_date"], errors="coerce").dt.year
@@ -214,16 +222,24 @@ def transformar_fact_movies(df: pd.DataFrame) -> pd.DataFrame:
         lambda row: round((row["profit"] / row["budget"]) * 100, 2)
         if row["budget"] and row["budget"] > 0 else None, axis=1
     )
+    resultado["full_date"] = resultado["release_date"]
+    resultado = resultado.merge(df_movie_genres[["movie_id", "genre_id"]], on="movie_id", how="left")
+    resultado = resultado.dropna(subset=["genre_id"])
+    resultado["genre_id"] = resultado["genre_id"].astype(int)
     resultado["generated_at"] = datetime.now()
 
-    colunas = ["movie_id", "title", "release_year", "release_month", "decade", "date_id",
+    colunas = ["movie_id", "genre_id", "title", "release_year", "release_month", "decade", "full_date", "date_id",
                "popularity", "vote_average", "vote_count", "budget", "revenue", "profit",
                "roi", "runtime", "query", "generated_at"]
     resultado = resultado[[c for c in colunas if c in resultado.columns]]
-    resultado.drop_duplicates(subset="movie_id", inplace=True)
+    resultado.drop_duplicates(subset=["movie_id", "genre_id"], inplace=True)
+
+    print("SHAPE FINAL:", resultado.shape)
+    print(resultado.head())
+    
     return resultado
 
-def transformar_fact_tv_shows(df: pd.DataFrame) -> pd.DataFrame:
+def transformar_fact_tv_shows(df: pd.DataFrame, df_tv_genres: pd.DataFrame, df_tv_networks: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
 
@@ -233,13 +249,20 @@ def transformar_fact_tv_shows(df: pd.DataFrame) -> pd.DataFrame:
     resultado["first_air_month"] = pd.to_datetime(resultado["first_air_date"], errors="coerce").dt.month
     resultado["decade"]  = resultado["first_air_year"].fillna(0).astype(int) // 10 * 10
     resultado["date_id"] = resultado["first_air_year"].fillna(0).astype(int) * 100 + resultado["first_air_month"].fillna(0).astype(int)
+    resultado["full_date"] = resultado["first_air_date"]
+    resultado = resultado.merge(df_tv_genres[["tv_show_id", "genre_id"]], on="tv_show_id", how="left")
+    resultado = resultado.merge(df_tv_networks[["tv_show_id", "network_id"]], on="tv_show_id", how="left")
+    resultado = resultado.dropna(subset=["genre_id", "network_id"])
+    resultado["genre_id"] = resultado["genre_id"].astype(int)
+    resultado["network_id"] = resultado["network_id"].astype(int)
     resultado["generated_at"] = datetime.now()
 
-    colunas = ["tv_show_id", "name", "first_air_year", "first_air_month", "decade", "date_id",
+    colunas = ["tv_show_id", "genre_id", "name", "network_id", "first_air_year", "first_air_month", "decade", "full_date", "date_id",
                "popularity", "vote_average", "vote_count", "number_of_seasons",
                "number_of_episodes", "in_production", "query", "generated_at"]
     resultado = resultado[[c for c in colunas if c in resultado.columns]]
-    resultado.drop_duplicates(subset="tv_show_id", inplace=True)
+    resultado.drop_duplicates(subset=["tv_show_id", "genre_id", "network_id"], inplace=True)
+
     return resultado
 
 def executar_gold():
@@ -265,13 +288,13 @@ def executar_gold():
     df_dim_date = transformar_dim_date(df_movies, df_tv)
     salvar_gold(df_dim_date, "gold_dim_date")
  
-    logger.info("[GOLD] Gerando dim_genre...")
-    df_dim_genre = transformar_dim_genre(df_movie_genres, df_tv_genres, df_movies, df_tv)
-    salvar_gold(df_dim_genre, "gold_dim_genre")
- 
-    logger.info("[GOLD] Gerando bridge_genre...")
-    df_bridge = transformar_bridge_genre(df_movie_genres, df_tv_genres)
-    salvar_gold(df_bridge, "bridge_genre")
+    logger.info("[GOLD] Gerando dim_movie_genre...")
+    df_dim_movie_genre = transformar_dim_movie_genre(df_movie_genres, df_movies)
+    salvar_gold(df_dim_movie_genre, "gold_dim_movie_genre")
+
+    logger.info("[GOLD] Gerando dim_tv_genre...")
+    df_dim_tv_genre = transformar_dim_tv_genre(df_tv_genres, df_tv)
+    salvar_gold(df_dim_tv_genre, "gold_dim_tv_genre")
  
     logger.info("[GOLD] Gerando dim_person...")
     df_dim_person = transformar_dim_person(df_movie_cast, df_movie_crew, df_tv_cast, df_tv_crew, df_movies, df_tv)
@@ -287,11 +310,11 @@ def executar_gold():
  
     #Fatos
     logger.info("[GOLD] Gerando fact_movies...")
-    df_fact_movies = transformar_fact_movies(df_movies)
+    df_fact_movies = transformar_fact_movies(df_movies, df_movie_genres)
     salvar_gold(df_fact_movies, "gold_fact_movies")
  
     logger.info("[GOLD] Gerando fact_tv_shows...")
-    df_fact_tv = transformar_fact_tv_shows(df_tv)
+    df_fact_tv = transformar_fact_tv_shows(df_tv, df_tv_genres, df_tv_networks)
     salvar_gold(df_fact_tv, "gold_fact_tv_shows")
 
     fim = time.time()
@@ -300,8 +323,8 @@ def executar_gold():
     logger.info("[GOLD] Agregação concluída")
     logger.info(f"[GOLD] Tempo total: {round((fim - inicio)/60, 2)} minutos")
     logger.info(f"[GOLD] Dim Date: {len(df_dim_date)}")
-    logger.info(f"[GOLD] Dim Genre: {len(df_dim_genre)}")
-    logger.info(f"[GOLD] Bridge Genre: {len(df_bridge)}")
+    logger.info(f"[GOLD] Dim Genre Movie: {len(df_dim_movie_genre)}")
+    logger.info(f"[GOLD] Dim Genre Movie: {len(df_dim_tv_genre)}")
     logger.info(f"[GOLD] Dim Person: {len(df_dim_person)}")
     logger.info(f"[GOLD] Fact Time: {len(df_dim_time)}")
     logger.info(f"[GOLD] Dim Network: {len(df_dim_network)}")
