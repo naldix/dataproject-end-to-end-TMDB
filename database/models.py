@@ -23,6 +23,10 @@ def criar_tabelas():
                 status TEXT,
                 tagline TEXT,
                 overview TEXT,
+                poster_path TEXT,
+                backdrop_path TEXT,
+                poster_url TEXT,
+                backdrop_url TEXT,
                 collection_id INTEGER,
                 collection_name TEXT,
                 query TEXT,
@@ -49,6 +53,10 @@ def criar_tabelas():
                 type TEXT,
                 tagline TEXT,
                 overview TEXT,
+                poster_path TEXT,
+                backdrop_path TEXT,
+                poster_url TEXT,
+                backdrop_url TEXT,
                 query TEXT,
                 loaded_at TIMESTAMP DEFAULT NOW()
             );
@@ -157,6 +165,9 @@ def criar_tabelas():
                 movie_id INTEGER,
                 genre_id INTEGER,
                 title TEXT,
+                overview TEXT,
+                poster_url TEXT,
+                backdrop_url TEXT,
                 release_year INTEGER,
                 release_month INTEGER,
                 decade INTEGER,
@@ -183,6 +194,9 @@ def criar_tabelas():
                 tv_show_id INTEGER,
                 genre_id INTEGER,
                 name TEXT,
+                overview TEXT,
+                poster_url TEXT,
+                backdrop_url TEXT,
                 network_id INTEGER,
                 first_air_year INTEGER,
                 first_air_month INTEGER,
@@ -284,6 +298,37 @@ def criar_tabelas():
             avg_popularity FLOAT,
             generated_at TIMESTAMP DEFAULT NOW()
         );
+        """))
+
+        # Gold Bridge Movie Person
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS gold_bridge_movie_person (
+                movie_id INTEGER,
+                person_id INTEGER,
+                name TEXT,
+                role TEXT,        -- 'actor' ou 'crew'
+                character TEXT,
+                job TEXT,
+                cast_order INTEGER,
+                PRIMARY KEY (movie_id, person_id, role)
+            );
+        """))
+
+        # Gold Bridge TVShow Person
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS gold_bridge_tvshow_person (
+                tv_show_id INTEGER,
+                person_id INTEGER,
+                name TEXT,
+                role TEXT,
+                character TEXT,
+                job TEXT,
+                cast_order INTEGER,
+                PRIMARY KEY (tv_show_id, person_id, role)
+            );
         """))           
 
     print("[DB] Tabelas criadas/verificadas com sucesso!")
+
+if __name__ == "__main__":
+    criar_tabelas()

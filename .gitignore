@@ -27,3 +27,6 @@ data/bronze/
 
 # Docker
 postgres_data
+
+# Power BI
+dash.pbix

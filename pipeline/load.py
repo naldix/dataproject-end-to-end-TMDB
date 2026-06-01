@@ -228,7 +228,7 @@ def transformar_fact_movies(df: pd.DataFrame, df_movie_genres: pd.DataFrame) -> 
     resultado["genre_id"] = resultado["genre_id"].astype(int)
     resultado["generated_at"] = datetime.now()
 
-    colunas = ["movie_id", "genre_id", "title", "release_year", "release_month", "decade", "full_date", "date_id",
+    colunas = ["movie_id", "genre_id", "title", "overview", "poster_url", "backdrop_url", "release_year", "release_month", "decade", "full_date", "date_id",
                "popularity", "vote_average", "vote_count", "budget", "revenue", "profit",
                "roi", "runtime", "query", "generated_at"]
     resultado = resultado[[c for c in colunas if c in resultado.columns]]
@@ -257,13 +257,53 @@ def transformar_fact_tv_shows(df: pd.DataFrame, df_tv_genres: pd.DataFrame, df_t
     resultado["network_id"] = resultado["network_id"].astype(int)
     resultado["generated_at"] = datetime.now()
 
-    colunas = ["tv_show_id", "genre_id", "name", "network_id", "first_air_year", "first_air_month", "decade", "full_date", "date_id",
+    colunas = ["tv_show_id", "genre_id", "name", "overview", "poster_url", "backdrop_url",  "network_id", "first_air_year", "first_air_month", "decade", "full_date", "date_id",
                "popularity", "vote_average", "vote_count", "number_of_seasons",
                "number_of_episodes", "in_production", "query", "generated_at"]
     resultado = resultado[[c for c in colunas if c in resultado.columns]]
     resultado.drop_duplicates(subset=["tv_show_id", "genre_id", "network_id"], inplace=True)
 
     return resultado
+
+def transformar_bridge_person(
+    df_movie_cast, df_movie_crew,
+    df_tv_cast, df_tv_crew
+):
+    # Bridge filmes
+    cast_movies = pd.DataFrame()
+    if not df_movie_cast.empty:
+        cast_movies = df_movie_cast[["movie_id","person_id","name","character","cast_order"]].copy()
+        cast_movies["role"] = "actor"
+        cast_movies["job"] = None
+
+    crew_movies = pd.DataFrame()
+    if not df_movie_crew.empty:
+        crew_movies = df_movie_crew[["movie_id","person_id","name","job"]].copy()
+        crew_movies["role"] = "crew"
+        crew_movies["character"] = None
+        crew_movies["cast_order"] = None
+
+    df_bridge_movies = pd.concat([cast_movies, crew_movies], ignore_index=True)
+    df_bridge_movies.drop_duplicates(subset=["movie_id","person_id","role"], inplace=True)
+
+    # Bridge séries
+    cast_tv = pd.DataFrame()
+    if not df_tv_cast.empty:
+        cast_tv = df_tv_cast[["tv_show_id","person_id","name","character","cast_order"]].copy()
+        cast_tv["role"] = "actor"
+        cast_tv["job"] = None
+
+    crew_tv = pd.DataFrame()
+    if not df_tv_crew.empty:
+        crew_tv = df_tv_crew[["tv_show_id","person_id","name","job"]].copy()
+        crew_tv["role"] = "crew"
+        crew_tv["character"] = None
+        crew_tv["cast_order"] = None
+
+    df_bridge_tv = pd.concat([cast_tv, crew_tv], ignore_index=True)
+    df_bridge_tv.drop_duplicates(subset=["tv_show_id","person_id","role"], inplace=True)
+
+    return df_bridge_movies, df_bridge_tv
 
 def executar_gold():
     inicio = time.time()
@@ -307,6 +347,11 @@ def executar_gold():
     logger.info("[GOLD] Gerando dim_network...")
     df_dim_network = transformar_dim_network(df_tv_networks, df_tv)
     salvar_gold(df_dim_network, "gold_dim_network")
+
+    logger.info("[GOLD] Gerando bridges person...")
+    df_bridge_movies, df_bridge_tv = transformar_bridge_person(df_movie_cast, df_movie_crew, df_tv_cast, df_tv_crew)
+    salvar_gold(df_bridge_movies, "gold_bridge_movie_person")
+    salvar_gold(df_bridge_tv, "gold_bridge_tvshow_person")
  
     #Fatos
     logger.info("[GOLD] Gerando fact_movies...")
@@ -323,6 +368,8 @@ def executar_gold():
     logger.info("[GOLD] Agregação concluída")
     logger.info(f"[GOLD] Tempo total: {round((fim - inicio)/60, 2)} minutos")
     logger.info(f"[GOLD] Dim Date: {len(df_dim_date)}")
+    logger.info(f"[GOLD] Bridge Movies: {len(df_bridge_movies)}")
+    logger.info(f"[GOLD] Bridge Tv Shows: {len(df_bridge_tv)}") 
     logger.info(f"[GOLD] Dim Genre Movie: {len(df_dim_movie_genre)}")
     logger.info(f"[GOLD] Dim Genre Movie: {len(df_dim_tv_genre)}")
     logger.info(f"[GOLD] Dim Person: {len(df_dim_person)}")

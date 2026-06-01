@@ -36,6 +36,8 @@ def transformar_movies(df_detalhes: pd.DataFrame) -> pd.DataFrame:
         "status": "status",
         "tagline": "tagline",
         "overview": "overview",
+        "poster_path": "poster_path",
+        "backdrop_path": "backdrop_path",
     }
 
     colunas_existentes = {k: v for k, v in colunas.items() if k in df_detalhes.columns}
@@ -68,6 +70,11 @@ def transformar_movies(df_detalhes: pd.DataFrame) -> pd.DataFrame:
     df["query"] = "tmdb_pipeline"
     df["loaded_at"] = datetime.now()
 
+    BASE_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
+
+    df["poster_url"] = BASE_IMAGE_URL + df["poster_path"].fillna("")
+    df["backdrop_url"] = BASE_IMAGE_URL + df["backdrop_path"].fillna("")
+
     return df
 
 def transformar_tv_shows(df_detalhes: pd.DataFrame) -> pd.DataFrame:
@@ -88,6 +95,8 @@ def transformar_tv_shows(df_detalhes: pd.DataFrame) -> pd.DataFrame:
         "type": "type",
         "tagline": "tagline",
         "overview": "overview",
+        "poster_path": "poster_path",
+        "backdrop_path": "backdrop_path",
     }
 
     colunas_existentes = {k: v for k, v in colunas.items() if k in df_detalhes.columns}
@@ -112,6 +121,11 @@ def transformar_tv_shows(df_detalhes: pd.DataFrame) -> pd.DataFrame:
 
     df["query"] = "tmdb_pipeline"
     df["loaded_at"] = datetime.now()
+
+    BASE_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
+
+    df["poster_url"] = BASE_IMAGE_URL + df["poster_path"].fillna("")
+    df["backdrop_url"] = BASE_IMAGE_URL + df["backdrop_path"].fillna("")
 
     return df
 
@@ -141,6 +155,11 @@ def transformar_generos(df_detalhes: pd.DataFrame, id_col: str, tabela_col: str)
     return pd.DataFrame(registros)
 
 def transformar_cast(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataFrame:
+
+    if "order" in df.columns:
+        df["order"] = pd.to_numeric(df["order"], errors="coerce")
+        df = df[df["order"] <= 10]
+
     colunas = {
         id_col: tabela_col,
         "id": "person_id",
@@ -149,13 +168,35 @@ def transformar_cast(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataF
         "order": "cast_order",
         "popularity": "popularity",
     }
-    colunas_existentes = {k: v for k, v in colunas.items() if k in df.columns}
+
+    colunas_existentes = {
+        k: v for k, v in colunas.items()
+        if k in df.columns
+    }
+
     resultado = df[list(colunas_existentes.keys())].rename(columns=colunas_existentes)
+
+    resultado.drop_duplicates(
+        subset=[tabela_col, "person_id"],
+        inplace=True
+    )
+
     resultado["loaded_at"] = datetime.now()
-    resultado.drop_duplicates(inplace=True)
     return resultado
 
 def transformar_crew(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataFrame:
+
+    cargos_relevantes = [
+        "Director",
+        "Producer",
+        "Writer",
+        "Screenplay",
+        "Original Music Composer"
+    ]
+
+    if "job" in df.columns:
+        df = df[df["job"].isin(cargos_relevantes)]
+
     colunas = {
         id_col: tabela_col,
         "id": "person_id",
@@ -164,10 +205,21 @@ def transformar_crew(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataF
         "department": "department",
         "popularity": "popularity",
     }
-    colunas_existentes = {k: v for k, v in colunas.items() if k in df.columns}
+
+    colunas_existentes = {
+        k: v for k, v in colunas.items()
+        if k in df.columns
+    }
+
     resultado = df[list(colunas_existentes.keys())].rename(columns=colunas_existentes)
+
+    resultado.drop_duplicates(
+        subset=[tabela_col, "person_id", "job"],
+        inplace=True
+    )
+
     resultado["loaded_at"] = datetime.now()
-    resultado.drop_duplicates(inplace=True)
+
     return resultado
 
 def transformar_networks(df_detalhes: pd.DataFrame) -> pd.DataFrame:
@@ -222,7 +274,7 @@ def salvar_silver(df: pd.DataFrame, tabela: str):
     engine = get_engine()
     with engine.begin() as conn:
         conn.execute(text(f"TRUNCATE TABLE {tabela} CASCADE"))
-    df.to_sql(tabela, engine, if_exists="append", index=False, method="multi")
+    df.to_sql(tabela, engine, if_exists="append", index=False, chunksize=5000)
     print(f"[SILVER] {len(df)} registros salvos em {tabela}")
 
 def executar_silver():
