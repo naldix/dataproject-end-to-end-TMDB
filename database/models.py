@@ -91,6 +91,8 @@ def criar_tabelas():
                 character TEXT,
                 cast_order INTEGER,
                 popularity FLOAT,
+                profile_path TEXT,
+                profile_url TEXT,    
                 loaded_at TIMESTAMP DEFAULT NOW()
             );
         """))
@@ -306,10 +308,11 @@ def criar_tabelas():
                 movie_id INTEGER,
                 person_id INTEGER,
                 name TEXT,
-                role TEXT,        -- 'actor' ou 'crew'
+                role TEXT,      
                 character TEXT,
                 job TEXT,
                 cast_order INTEGER,
+                profile_url TEXT,
                 PRIMARY KEY (movie_id, person_id, role)
             );
         """))
@@ -324,6 +327,7 @@ def criar_tabelas():
                 character TEXT,
                 job TEXT,
                 cast_order INTEGER,
+                profile_url TEXT,
                 PRIMARY KEY (tv_show_id, person_id, role)
             );
         """))           

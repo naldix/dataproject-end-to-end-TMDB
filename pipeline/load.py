@@ -272,7 +272,7 @@ def transformar_bridge_person(
     # Bridge filmes
     cast_movies = pd.DataFrame()
     if not df_movie_cast.empty:
-        cast_movies = df_movie_cast[["movie_id","person_id","name","character","cast_order"]].copy()
+        cast_movies = df_movie_cast[["movie_id","person_id","name","character","cast_order","profile_url"]].copy()
         cast_movies["role"] = "actor"
         cast_movies["job"] = None
 
@@ -282,6 +282,7 @@ def transformar_bridge_person(
         crew_movies["role"] = "crew"
         crew_movies["character"] = None
         crew_movies["cast_order"] = None
+        crew_movies["profile_url"] = None
 
     df_bridge_movies = pd.concat([cast_movies, crew_movies], ignore_index=True)
     df_bridge_movies.drop_duplicates(subset=["movie_id","person_id","role"], inplace=True)
@@ -289,7 +290,7 @@ def transformar_bridge_person(
     # Bridge séries
     cast_tv = pd.DataFrame()
     if not df_tv_cast.empty:
-        cast_tv = df_tv_cast[["tv_show_id","person_id","name","character","cast_order"]].copy()
+        cast_tv = df_tv_cast[["tv_show_id","person_id","name","character","cast_order","profile_url"]].copy()
         cast_tv["role"] = "actor"
         cast_tv["job"] = None
 
@@ -299,6 +300,7 @@ def transformar_bridge_person(
         crew_tv["role"] = "crew"
         crew_tv["character"] = None
         crew_tv["cast_order"] = None
+        crew_tv["profile_url"] = None
 
     df_bridge_tv = pd.concat([cast_tv, crew_tv], ignore_index=True)
     df_bridge_tv.drop_duplicates(subset=["tv_show_id","person_id","role"], inplace=True)

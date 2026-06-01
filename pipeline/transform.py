@@ -167,6 +167,7 @@ def transformar_cast(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataF
         "character": "character",
         "order": "cast_order",
         "popularity": "popularity",
+        "profile_path": "profile_path",
     }
 
     colunas_existentes = {
@@ -182,6 +183,10 @@ def transformar_cast(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataF
     )
 
     resultado["loaded_at"] = datetime.now()
+
+    BASE_IMAGE_URL = "https://image.tmdb.org/t/p/w185"
+    resultado["profile_url"] = BASE_IMAGE_URL + resultado["profile_path"].fillna("")
+    
     return resultado
 
 def transformar_crew(df: pd.DataFrame, id_col: str, tabela_col: str) -> pd.DataFrame:
