@@ -311,12 +311,13 @@ Dashboard inspirado em plataformas de streaming conectado diretamente à camada 
 ## 5.4 Técnicas DAX Utilizadas
 
 * TOPN + ALLSELECTED
-* UNION + SELECTCOLUMNS
+* UNION + SELECTCOLUMNS + RANKX
 * SUMMARIZE + GROUPBY
 * CONCATENATEX
 * FILTER + IN
 * SELECTEDVALUE
 * FORMAT + LEFT
+* CSS
 
 ---
 
