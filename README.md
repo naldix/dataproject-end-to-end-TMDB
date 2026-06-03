@@ -241,6 +241,8 @@ Banco de dados responsável pelas camadas Silver e Gold.
 * TRUNCATE CASCADE antes das cargas
 * SQLAlchemy com pooling automático
 
+![Arquitetura](assets/Project_TMDB.drawio.png)
+
 ---
 
 # 5. Dashboard Power BI
