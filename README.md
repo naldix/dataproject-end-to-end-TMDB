@@ -384,6 +384,8 @@ Uma linha por:
 id + person_id + role
 ```
 
+![Projeto](assets/PowerBi.png)
+
 ---
 
 # 7. Como Executar o Projeto
